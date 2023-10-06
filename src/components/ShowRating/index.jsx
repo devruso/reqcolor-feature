@@ -11,7 +11,41 @@ const TaskItemData = (props) => {
 
   useEffect(() => {  
 
+    // Sets the background color of the task based on the time elapsed
+      const updateBackgroundColor = async () => {
+        
+        const conversationSid = props.task.attributes.conversationSid;
+        const conversation = await props.manager.conversationsClient.getConversationBySid(conversationSid);
+        const messages = await conversation.getMessages();
 
+        // Need to check if it was initiaded by a 'customer' or 'admin'
+        const taskCreator = props.task._task.attributes.initiatedBy;
+
+          // need to check if it makes sense to use the last message or the first message
+        const lastMessage = messages.items[messages.items.length - 1];
+        const lastMessageTime = new Date(lastMessage.timestamp);
+        const elapsedTime = calculateElapsedTime(lastMessageTime);
+
+          if (props.manager.user.identity === lastMessage.author || taskCreator != 'customer') {
+            setBackgroundColor("#e1e3ea");
+          } else {
+            if (elapsedTime >= 8) {
+              setBackgroundColor("#ee7f83"); 
+            } else if (elapsedTime >= 4) {
+              setBackgroundColor("#def733");
+            } else {
+              setBackgroundColor("#0efc6e");
+            }
+          }
+      };
+
+      // Checks if the backgroundColor needs to be updated periodically
+      const interval = setInterval(updateBackgroundColor, 1000);
+
+      // Clear interval on unmount
+      return () => {
+        clearInterval(interval);
+      };
 
   }, [props.task,backgroundColor]);
 
